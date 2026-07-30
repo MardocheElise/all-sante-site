@@ -19,12 +19,22 @@ const sections = [
     ],
   },
   {
-    group: "Endpoints",
+    group: "Bus d'interop (FHIR)",
     items: [
       { id: "endpoints", label: "Vue d'ensemble" },
       { id: "prise-en-charge", label: "Prise en charge" },
       { id: "demande-examen", label: "Demande d'examen" },
       { id: "resultats", label: "Résultats" },
+    ],
+  },
+  {
+    group: "Dépôt national",
+    items: [
+      { id: "national", label: "Vue d'ensemble" },
+      { id: "national-identite", label: "Identité patient" },
+      { id: "national-historique", label: "Historique clinique" },
+      { id: "national-socle", label: "Socle vital" },
+      { id: "national-preferences", label: "Préférences de partage" },
     ],
   },
   {

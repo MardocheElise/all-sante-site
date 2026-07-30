@@ -13,6 +13,8 @@ function Method({ verb }: { verb: string }) {
   const colors: Record<string, string> = {
     POST: "bg-[#2dd4bf]/15 text-[#2dd4bf] border-[#2dd4bf]/30",
     GET: "bg-[#38bdf8]/15 text-[#38bdf8] border-[#38bdf8]/30",
+    PUT: "bg-[#fbbf24]/15 text-[#fbbf24] border-[#fbbf24]/30",
+    DELETE: "bg-[#f87171]/15 text-[#f87171] border-[#f87171]/30",
   };
   return (
     <span className={`rounded-md border px-2 py-0.5 font-mono text-xs font-semibold ${colors[verb] ?? ""}`}>
@@ -165,8 +167,9 @@ x-api-key: <ALL_SANTE_API_KEY>`}
                   <tbody className="divide-y divide-[var(--border)] text-[var(--text-muted)]">
                     {[
                       ["200", "OK", "Bundle reçu et matérialisé (idempotent)."],
-                      ["400", "Bad Request", "Bundle FHIR invalide ou matricule CMU absent."],
+                      ["400", "Bad Request", "Payload invalide, matricule CMU absent ou consentement manquant."],
                       ["401", "Unauthorized", "En-tête x-api-key manquant ou invalide."],
+                      ["404", "Not Found", "Patient ou consultation introuvable au dépôt national."],
                       ["422", "Unprocessable", "Ressource attendue absente du Bundle."],
                       ["500", "Server Error", "Erreur interne lors de la matérialisation."],
                     ].map(([c, s, d]) => (
@@ -440,6 +443,397 @@ x-api-key: <ALL_SANTE_API_KEY>`}
   "demande": "DEM-2026-1177",
   "observations": 1,
   "prescripteurNotifie": true
+}`}
+                />
+              </div>
+            </section>
+
+            {/* ===================== DÉPÔT NATIONAL ===================== */}
+            {/* NATIONAL — OVERVIEW */}
+            <section id="national" className="prose-anchor scroll-mt-24">
+              <span className="font-mono text-xs uppercase tracking-wider text-[var(--accent-3)]">
+                Dépôt national
+              </span>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text)]">
+                API d&apos;identité et d&apos;historique partagé
+              </h2>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Au-delà du bus d&apos;interopérabilité (routage FHIR entre systèmes d&apos;un même
+                établissement), All_Santé expose un <strong className="text-[var(--text)]">dépôt
+                national</strong>. Il consolide l&apos;identité pivot et l&apos;historique clinique du
+                patient <em>entre établissements</em>, sous le contrôle de son consentement. La clé API
+                identifie l&apos;établissement appelant&nbsp;: il n&apos;a plus à se déclarer, il est
+                reconnu, et chaque accès est journalisé (piste d&apos;audit opposable).
+              </p>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                {[
+                  ["Socle vital", "Groupe sanguin, allergies, traitements au long cours. Publié par défaut — ce qui sauve une vie quand le patient ne peut pas parler.", "SOCLE_VITAL"],
+                  ["Épisode de soin", "Consultations, diagnostics, prescriptions. Partagé uniquement avec le consentement du patient.", "EPISODE_SOIN"],
+                  ["Charge sociale", "Éléments les plus sensibles, cloisonnés à part.", "CHARGE_SOCIALE"],
+                ].map(([t, d, tag]) => (
+                  <div key={tag} className="rounded-xl border border-[var(--border)] bg-[var(--panel)] p-4">
+                    <span className="font-mono text-[11px] text-[var(--accent-3)]">{tag}</span>
+                    <h3 className="mt-1 text-sm font-semibold text-[var(--text)]">{t}</h3>
+                    <p className="mt-1 text-xs text-[var(--text-dim)]">{d}</p>
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="mt-8 text-sm font-semibold uppercase tracking-wider text-[var(--text-dim)]">
+                Toutes les routes nationales
+              </h3>
+              <div className="mt-3 space-y-2">
+                {[
+                  ["GET", "/national/patients/:matricule", "Identité pivot (SGCH)", "#national-identite"],
+                  ["POST", "/national/patients", "Publier une identité (SGCH)", "#national-identite"],
+                  ["GET", "/national/patients/:matricule/consultations", "Historique externe (DPI)", "#national-historique"],
+                  ["POST", "/national/consultations", "Publier une consultation (DPI)", "#national-historique"],
+                  ["DELETE", "/national/consultations/:id", "Révoquer une consultation", "#national-historique"],
+                  ["GET", "/national/patients/:matricule/socle-vital", "Socle vital (urgences)", "#national-socle"],
+                  ["POST", "/national/patients/:matricule/allergies", "Déclarer une allergie", "#national-socle"],
+                  ["POST", "/national/patients/:matricule/traitements-chroniques", "Déclarer un traitement", "#national-socle"],
+                  ["PUT", "/national/patients/:matricule/preferences", "Préférences de partage", "#national-preferences"],
+                ].map(([v, p, flow, href]) => (
+                  <a
+                    key={v + p}
+                    href={href}
+                    className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--panel)] px-4 py-3 transition-colors hover:border-[var(--accent)]"
+                  >
+                    <Method verb={v} />
+                    <code className="flex-1 break-all font-mono text-sm text-[var(--text)]">{p}</code>
+                    <span className="font-mono text-xs text-[var(--text-dim)]">{flow}</span>
+                  </a>
+                ))}
+              </div>
+
+              <div className="mt-6 flex gap-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-glow)] p-4">
+                <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--accent)]" />
+                <p className="text-sm text-[var(--text-muted)]">
+                  Base&nbsp;: <code className="inline">https://api.all-sante.ci</code>. L&apos;en-tête{" "}
+                  <code className="inline">x-api-key</code> identifie l&apos;établissement (aucune
+                  déclaration nécessaire). L&apos;en-tête optionnel{" "}
+                  <code className="inline">x-etablissement</code> n&apos;est qu&apos;un repli hérité&nbsp;:
+                  l&apos;identité prouvée par la clé prime toujours dans le journal d&apos;accès.
+                </p>
+              </div>
+            </section>
+
+            {/* NATIONAL — IDENTITÉ */}
+            <section id="national-identite" className="prose-anchor scroll-mt-24">
+              <h2 className="text-2xl font-semibold tracking-tight text-[var(--text)]">
+                Identité patient
+              </h2>
+
+              <h3 className="mt-6 text-base font-semibold text-[var(--text)]">Consulter une identité</h3>
+              <p className="mt-1 font-mono text-xs text-[var(--text-dim)]">SGCH — recherche dès la saisie des 13 chiffres</p>
+              <div className="mt-3">
+                <EndpointHeader verb="GET" path="https://api.all-sante.ci/national/patients/:matricule" />
+              </div>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Renvoie l&apos;identité pivot du patient, son établissement d&apos;origine et ses
+                préférences de partage (le DPI s&apos;en sert pour savoir s&apos;il doit redemander
+                l&apos;accord à chaque consultation).
+              </p>
+              <div className="mt-3">
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "matricule": "1234567890123",
+  "nom": "KOUADIO",
+  "prenom": "Awa",
+  "genre": "feminin",
+  "dateNaissance": "1990-04-12",
+  "groupeSanguin": "O+",
+  "etablissementOrigine": { "code": "HOPA", "nom": "Hôpital A" },
+  "partageDurable": false,
+  "oppositionSocleVital": false,
+  "misAJourLe": "2026-07-30T09:14:02.000Z"
+}`}
+                />
+              </div>
+
+              <h3 className="mt-8 text-base font-semibold text-[var(--text)]">Publier une identité</h3>
+              <p className="mt-1 font-mono text-xs text-[var(--text-dim)]">SGCH — upsert après création du patient</p>
+              <div className="mt-3">
+                <EndpointHeader verb="POST" path="https://api.all-sante.ci/national/patients" />
+              </div>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Idempotent&nbsp;: réconcilié par matricule CMU (13 chiffres, sans séparateurs). Le champ{" "}
+                <code className="inline">genre</code> vaut <code className="inline">masculin</code> ou{" "}
+                <code className="inline">feminin</code>.
+              </p>
+              <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                <CodeBlock
+                  label="Corps — identité"
+                  code={`{
+  "matricule": "1234567890123",
+  "nom": "KOUADIO",
+  "prenom": "Awa",
+  "genre": "feminin",
+  "dateNaissance": "1990-04-12",
+  "contact": "+2250700000000",
+  "villeCommune": "Abidjan",
+  "groupeSanguin": "O+",
+  "assuranceNom": "CMU",
+  "assuranceNumero": "..."
+}`}
+                />
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "ok": true,
+  "matricule": "1234567890123",
+  "id": "cly8x…"
+}`}
+                />
+              </div>
+            </section>
+
+            {/* NATIONAL — HISTORIQUE */}
+            <section id="national-historique" className="prose-anchor scroll-mt-24">
+              <h2 className="text-2xl font-semibold tracking-tight text-[var(--text)]">
+                Historique clinique
+              </h2>
+
+              <h3 className="mt-6 text-base font-semibold text-[var(--text)]">Consulter l&apos;historique</h3>
+              <p className="mt-1 font-mono text-xs text-[var(--text-dim)]">DPI — historique consolidé, hors établissement appelant</p>
+              <div className="mt-3">
+                <EndpointHeader verb="GET" path="https://api.all-sante.ci/national/patients/:matricule/consultations" />
+              </div>
+              <div className="mt-4 overflow-hidden rounded-xl border border-[var(--border)]">
+                <table className="w-full text-sm">
+                  <thead className="bg-[var(--panel-2)] text-left text-[var(--text-dim)]">
+                    <tr>
+                      <th className="px-4 py-2.5 font-medium">Query</th>
+                      <th className="px-4 py-2.5 font-medium">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border)] text-[var(--text-muted)]">
+                    <tr><td className="px-4 py-2.5 font-mono text-xs text-[var(--accent)]">limite</td><td className="px-4 py-2.5">Nombre maximum de consultations retournées.</td></tr>
+                    <tr><td className="px-4 py-2.5 font-mono text-xs text-[var(--accent)]">exclureEtablissement</td><td className="px-4 py-2.5">Code établissement à retirer (le DPI possède déjà ses consultations locales).</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Le champ <code className="inline">elementsNonPartages</code> est un booléen seul&nbsp;:
+                le praticien sait qu&apos;il doit interroger son patient, sans rien apprendre du contenu masqué.
+              </p>
+              <div className="mt-3">
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "matricule": "1234567890123",
+  "patient": { "nom": "KOUADIO", "prenom": "Awa" },
+  "nombre": 2,
+  "elementsNonPartages": true,
+  "messageNonPartages": "Ce patient a choisi de ne pas partager certains éléments…",
+  "consultations": [
+    {
+      "id": "cly…",
+      "dateConsultation": "2026-06-02T10:20:00.000Z",
+      "etablissement": { "code": "HOPB", "nom": "Hôpital B", "ville": "Bouaké" },
+      "motif": "Fièvre persistante",
+      "professionnel": "Dr. Traoré",
+      "diagnosticRetenu": "Paludisme simple",
+      "codeCim10": "B54"
+    }
+  ]
+}`}
+                />
+              </div>
+
+              <h3 className="mt-8 text-base font-semibold text-[var(--text)]">Publier une consultation</h3>
+              <p className="mt-1 font-mono text-xs text-[var(--text-dim)]">DPI — à la clôture d&apos;une consultation</p>
+              <div className="mt-3">
+                <EndpointHeader verb="POST" path="https://api.all-sante.ci/national/consultations" />
+              </div>
+              <div className="mt-4 flex gap-3 rounded-xl border border-[var(--warning)]/30 bg-[var(--warning)]/10 p-4">
+                <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-[var(--warning)]" />
+                <p className="text-sm text-[var(--text-muted)]">
+                  Le bloc <code className="inline">consentement</code> est <strong className="text-[var(--text)]">obligatoire</strong>.
+                  Sans accord du patient, l&apos;API refuse tout contenu clinique (<code className="inline">400</code>) et n&apos;écrit
+                  qu&apos;un marqueur d&apos;existence. <code className="inline">recueilliPar</code> est requis même en cas de refus.
+                </p>
+              </div>
+              <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                <CodeBlock
+                  label="Corps — consultation"
+                  code={`{
+  "matricule": "1234567890123",
+  "referenceLocale": "CONS-2026-8841",
+  "consentement": {
+    "accorde": true,
+    "recueilliPar": "Dr. Traoré",
+    "portee": "DURABLE",
+    "support": "FORMULAIRE_PAPIER",
+    "etages": ["EPISODE_SOIN"]
+  },
+  "etage": "EPISODE_SOIN",
+  "dateConsultation": "2026-07-30T09:00:00Z",
+  "motif": "Céphalées",
+  "professionnel": "Dr. Traoré",
+  "diagnosticRetenu": "Migraine",
+  "codeCim10": "G43",
+  "prescriptions": [
+    { "medicament": "Paracétamol", "dosage": "1000mg", "posologie": "3x/j" }
+  ]
+}`}
+                />
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "ok": true,
+  "id": "cly…",
+  "referenceLocale": "CONS-2026-8841",
+  "matricule": "1234567890123",
+  "partage": true,
+  "message": "Épisode de soin publié au dépôt national."
+}`}
+                />
+              </div>
+
+              <h3 className="mt-8 text-base font-semibold text-[var(--text)]">Révoquer une consultation</h3>
+              <p className="mt-1 font-mono text-xs text-[var(--text-dim)]">Le patient revient sur son accord — purge du contenu clinique</p>
+              <div className="mt-3">
+                <EndpointHeader verb="DELETE" path="https://api.all-sante.ci/national/consultations/:id?motif=..." />
+              </div>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Le contenu clinique est purgé&nbsp;; la consultation redevient un simple marqueur. Les
+                lectures antérieures restent traçables dans le journal d&apos;accès.
+              </p>
+              <div className="mt-3">
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "ok": true,
+  "id": "cly…",
+  "message": "Contenu clinique purgé du dépôt national. Les lectures antérieures restent consultables dans le journal d'accès."
+}`}
+                />
+              </div>
+            </section>
+
+            {/* NATIONAL — SOCLE VITAL */}
+            <section id="national-socle" className="prose-anchor scroll-mt-24">
+              <h2 className="text-2xl font-semibold tracking-tight text-[var(--text)]">Socle vital</h2>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Ce qui sauve une vie quand le patient ne peut pas parler&nbsp;: groupe sanguin,
+                allergies, traitements au long cours. Publié par défaut, mais le patient peut s&apos;y opposer.
+              </p>
+
+              <h3 className="mt-6 text-base font-semibold text-[var(--text)]">Consulter le socle vital</h3>
+              <p className="mt-1 font-mono text-xs text-[var(--text-dim)]">Urgences</p>
+              <div className="mt-3">
+                <EndpointHeader verb="GET" path="https://api.all-sante.ci/national/patients/:matricule/socle-vital" />
+              </div>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Si le patient s&apos;est opposé, la réponse renvoie <code className="inline">oppositionPatient: true</code> et
+                des listes vides — jamais de contenu.
+              </p>
+              <div className="mt-3">
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "matricule": "1234567890123",
+  "patient": { "nom": "KOUADIO", "prenom": "Awa", "genre": "feminin" },
+  "oppositionPatient": false,
+  "groupeSanguin": "O+",
+  "allergies": [
+    { "libelle": "Pénicilline", "type": "medicament", "severite": "grave", "reaction": "Œdème" }
+  ],
+  "traitementsChroniques": [
+    { "medicament": "Metformine", "dosage": "850mg", "posologie": "2x/j", "indication": "Diabète type 2" }
+  ]
+}`}
+                />
+              </div>
+
+              <h3 className="mt-8 text-base font-semibold text-[var(--text)]">Déclarer une allergie</h3>
+              <div className="mt-3">
+                <EndpointHeader verb="POST" path="https://api.all-sante.ci/national/patients/:matricule/allergies" />
+              </div>
+              <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                <CodeBlock
+                  label="Corps — allergie"
+                  code={`{
+  "referenceLocale": "ALG-2026-114",
+  "libelle": "Pénicilline",
+  "type": "medicament",
+  "severite": "grave",
+  "reaction": "Œdème de Quincke",
+  "active": true
+}`}
+                />
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "ok": true,
+  "id": "cly…",
+  "matricule": "1234567890123"
+}`}
+                />
+              </div>
+
+              <h3 className="mt-8 text-base font-semibold text-[var(--text)]">Déclarer un traitement chronique</h3>
+              <div className="mt-3">
+                <EndpointHeader verb="POST" path="https://api.all-sante.ci/national/patients/:matricule/traitements-chroniques" />
+              </div>
+              <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                <CodeBlock
+                  label="Corps — traitement"
+                  code={`{
+  "referenceLocale": "TRT-2026-052",
+  "medicament": "Metformine",
+  "dci": "metformine",
+  "dosage": "850mg",
+  "posologie": "2x/j",
+  "indication": "Diabète type 2",
+  "actif": true
+}`}
+                />
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "ok": true,
+  "id": "cly…",
+  "matricule": "1234567890123"
+}`}
+                />
+              </div>
+            </section>
+
+            {/* NATIONAL — PRÉFÉRENCES */}
+            <section id="national-preferences" className="prose-anchor scroll-mt-24">
+              <h2 className="text-2xl font-semibold tracking-tight text-[var(--text)]">
+                Préférences de partage
+              </h2>
+              <div className="mt-4">
+                <EndpointHeader verb="PUT" path="https://api.all-sante.ci/national/patients/:matricule/preferences" />
+              </div>
+              <p className="mt-4 text-[var(--text-muted)]">
+                Accord durable au partage, ou opposition au socle vital. Appelable par un agent
+                d&apos;accueil comme par un praticien — le canal principal reste le formulaire papier
+                saisi au guichet. <code className="inline">recueilliPar</code> est requis.
+              </p>
+              <div className="mt-3 grid gap-4 lg:grid-cols-2">
+                <CodeBlock
+                  label="Corps — préférences"
+                  code={`{
+  "partageDurable": true,
+  "oppositionSocleVital": false,
+  "recueilliPar": "Agent d'accueil — M. Koné",
+  "support": "FORMULAIRE_PAPIER",
+  "preuve": "scan-formulaire-2026-07-30.pdf"
+}`}
+                />
+                <CodeBlock
+                  label="200 OK"
+                  code={`{
+  "ok": true,
+  "matricule": "1234567890123",
+  "partageDurable": true,
+  "oppositionSocleVital": false
 }`}
                 />
               </div>
