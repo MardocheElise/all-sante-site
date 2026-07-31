@@ -38,7 +38,7 @@ export default function Navbar() {
             </Link>
           ))}
           <a
-            href="https://github.com"
+            href="https://github.com/MardocheElise/allSante-api"
             target="_blank"
             rel="noreferrer"
             className="ml-2 flex items-center gap-2 rounded-lg border border-[var(--border-strong)] px-3.5 py-2 text-sm text-[var(--text-muted)] transition-colors hover:border-[var(--accent)] hover:text-[var(--text)]"
