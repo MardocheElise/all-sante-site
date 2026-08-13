@@ -679,7 +679,7 @@ function CarteSystemes() {
         vers votre laboratoire.
       </p>
 
-      {incomplet && (
+      {/* {incomplet && (
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-[var(--warning)]/30 bg-[var(--warning)]/5 p-3 text-sm text-[var(--text-muted)]">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[var(--warning)]" />
           <span>
@@ -688,7 +688,7 @@ function CarteSystemes() {
             d&apos;un <strong>autre établissement</strong>.
           </span>
         </div>
-      )}
+      )} */}
 
       <div className="mt-5 space-y-4">
         <Champ
