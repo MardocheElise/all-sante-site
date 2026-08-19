@@ -705,6 +705,12 @@ function CarteSystemes() {
           placeholder="http://localhost:3021"
           aide="Reçoit les demandes d'examen émises par votre DPI."
         />
+         <Champ
+          label="URL de votre système administrative"
+          value={openelisUrl}
+          onChange={(e) => setOpenelisUrl(e.target.value)}
+          placeholder="http://localhost:3021"
+        />
         <Champ
           label="Clé entrante"
           type="password"
