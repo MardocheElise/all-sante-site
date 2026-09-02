@@ -627,6 +627,7 @@ function CarteSystemes() {
   const [systemes, setSystemes] = useState<Systemes | null>(null);
   const [dpiUrl, setDpiUrl] = useState("");
   const [openelisUrl, setOpenelisUrl] = useState("");
+  const [sgchUrl, setSgchUrl] = useState("");
   const [cleSortante, setCleSortante] = useState("");
   const [erreur, setErreur] = useState<string | null>(null);
   const [succes, setSucces] = useState<string | null>(null);
@@ -639,6 +640,7 @@ function CarteSystemes() {
         setSystemes(s);
         setDpiUrl(s.dpiUrl ?? "");
         setOpenelisUrl(s.openelisUrl ?? "");
+        setSgchUrl(s.sgchUrl ?? "");
       })
       .catch(() => undefined);
   }, []);
@@ -696,7 +698,7 @@ function CarteSystemes() {
           value={dpiUrl}
           onChange={(e) => setDpiUrl(e.target.value)}
           placeholder="http://localhost:3001"
-          aide="Sans barre oblique finale. Reçoit les prises en charge et les résultats."
+          aide="Reçoit les prises en charge et les résultats."
         />
         <Champ
           label="URL de votre système de laboratoire"
@@ -705,11 +707,12 @@ function CarteSystemes() {
           placeholder="http://localhost:3021"
           aide="Reçoit les demandes d'examen émises par votre DPI."
         />
-         <Champ
+        <Champ
           label="URL de votre système administrative"
-          value={openelisUrl}
-          onChange={(e) => setOpenelisUrl(e.target.value)}
+          value={sgchUrl}
+          onChange={(e) => setSgchUrl(e.target.value)}
           placeholder="http://localhost:3021"
+          aide="Reçoit les demandes d'examen émises par votre DPI."
         />
         <Champ
           label="Clé entrante"
@@ -717,7 +720,9 @@ function CarteSystemes() {
           value={cleSortante}
           onChange={(e) => setCleSortante(e.target.value)}
           placeholder={
-            systemes?.cleSortanteDefinie ? "définie — laisser vide pour conserver" : ""
+            systemes?.cleSortanteDefinie
+              ? "définie — laisser vide pour conserver"
+              : ""
           }
           aide="Clé qu'All_Santé présentera à vos systèmes. Doit correspondre à leur variable INTEROP_INBOUND_KEY. 16 caractères minimum."
         />

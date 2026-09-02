@@ -128,7 +128,11 @@ export const portailApi = {
       cle: string;
       avertissement: string;
       details: { prefixe: string; libelle: string };
-    }>("/portail/cles", { method: "POST", body: JSON.stringify({ libelle }) }, true),
+    }>(
+      "/portail/cles",
+      { method: "POST", body: JSON.stringify({ libelle }) },
+      true,
+    ),
 
   revoquerCle: (id: string) =>
     appeler<{ ok: boolean; message: string }>(
@@ -142,6 +146,7 @@ export const portailApi = {
   majSystemes: (donnees: {
     dpiUrl?: string | null;
     openelisUrl?: string | null;
+    sgchUrl?: string | null;
     cleSortante?: string | null;
   }) =>
     appeler<Systemes & { message: string }>(
@@ -160,6 +165,7 @@ export interface Systemes {
   code: string;
   dpiUrl: string | null;
   openelisUrl: string | null;
+  sgchUrl: string | null;
   cleSortanteDefinie: boolean;
   complet?: boolean;
 }
